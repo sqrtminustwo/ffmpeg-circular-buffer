@@ -2,7 +2,7 @@
 #include "cfb.hpp"
 
 struct Test {
-    static constexpr size_t bd_size = 10;
+    static constexpr int bd_size = 10;
     CyclicFragmentBuffer bd{bd_size};
     size_t buf_size;
     uint8_t *buf;
@@ -43,9 +43,7 @@ TEST(FFmpegCircularBufferTest, NotLoadedOffsetTest) {
         }
     };
 
-    test_full_buffer(0);
-    test_full_buffer(67);
-    test_full_buffer(13);
+    for (auto &i : {0, t.bd_size * 4, t.bd_size * 2}) test_full_buffer(i);
 }
 
 int main(int argc, char **argv) {
