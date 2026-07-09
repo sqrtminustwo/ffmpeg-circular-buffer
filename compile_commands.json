@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/cfb.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/cfb.cpp",
+  "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/cfb.cpp",
+  "output": "CMakeFiles/my_tests.dir/src/cfb.cpp.o"
+},
+{
+  "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/test.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/test.cpp",
+  "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/test.cpp",
+  "output": "CMakeFiles/my_tests.dir/src/test.cpp.o"
+}
+]
