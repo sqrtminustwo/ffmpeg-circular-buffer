@@ -1,20 +1,51 @@
 #include <gtest/gtest.h>
 #include "cfb.hpp"
 
-int Factorial(int n) {
-    if (n <= 1) return 1;
-    else return n * Factorial(n - 1);
+struct Test {
+    static constexpr size_t bd_size = 10;
+    CyclicFragmentBuffer bd{bd_size};
+    size_t buf_size;
+    uint8_t *buf;
+
+    void rp() { read_packet(&bd, buf, buf_size); }
+
+    Test() {
+        bd.offset = 0;
+
+        buf_size = 3;
+        buf = new uint8_t[buf_size];
+    }
+
+    ~Test() { delete[] buf; }
+};
+
+Test t{};
+
+TEST(FFmpegCircularBufferTest, BasicCircularLoadingTest) {
+    int start_elem = 0;
+    for (int i = 0; i < 10; i++) {
+        t.rp();
+
+        for (int i = 0; i < t.buf_size; i++) EXPECT_EQ(t.buf[i], start_elem + i);
+
+        start_elem += t.buf_size;
+    }
 }
 
-// Test case for Factorial function
-TEST(FactorialTest, HandlesZeroInput) { EXPECT_EQ(Factorial(0), 1); }
+TEST(FFmpegCircularBufferTest, NotLoadedOffsetTest) {
+    auto test_full_buffer = [](int start_offset) {
+        t.bd.offset = start_offset;
 
-TEST(FactorialTest, HandlesPositiveInput) {
-    EXPECT_EQ(Factorial(1), 1);
-    EXPECT_EQ(Factorial(2), 2);
-    EXPECT_EQ(Factorial(3), 6);
-    EXPECT_EQ(Factorial(4), 24);
-    EXPECT_EQ(Factorial(5), 120);
+        for (int i = 0; i < t.bd_size; i++) {
+            auto buf_i = i % t.buf_size;
+            if (buf_i == 0) t.rp();
+            EXPECT_EQ(t.buf[buf_i], start_offset + i);
+        }
+    };
+
+    test_full_buffer(0);
+    test_full_buffer(67);
+    test_full_buffer(13);
 }
 
 int main(int argc, char **argv) {

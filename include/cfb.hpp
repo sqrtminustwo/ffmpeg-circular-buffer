@@ -28,8 +28,11 @@ struct CyclicFragmentBuffer {
     void refill(bool);
     void advance(int);
     void join_filler();
+
+#ifdef DEBUG
     void print_stats();
     void print();
+#endif
 };
 
 int read_packet(void *opaque, uint8_t *buf, int buf_size);

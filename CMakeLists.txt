@@ -5,6 +5,7 @@ project(my_project)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# add_compile_definitions(DEBUG)
 
 find_package(GTest REQUIRED)
 
@@ -15,7 +16,11 @@ add_executable(my_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test.cpp
 )
 
-target_include_directories(my_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(
+    my_tests
+    PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
 
 target_link_libraries(my_tests PRIVATE GTest::gtest_main)
 

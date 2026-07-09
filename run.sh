@@ -6,3 +6,4 @@ fi
 
 cmake --preset clang-debug
 cmake --build build/clang-debug
+./build/clang-debug/my_tests

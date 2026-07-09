@@ -1,28 +1,34 @@
+#include <algorithm>
 #include <cassert>
 #include <condition_variable>
 #include <cstring>
-#include <iostream>
 #include <mutex>
 #include <thread>
 #include "cfb.hpp"
 
-int getTotalSize() { return 30; }
+#ifdef DEBUG
+#include <iostream>
+#include <cstdio>
+#endif
+
+int getTotalSize() { return 100; }
 
 void init_zero(int length, uint8_t *buf) {
     for (int i = 0; i < length; i++) buf[i] = 0;
 }
 
 void fetch_frames(int offset, int length, uint8_t *buf) {
-    // printf("fetchFrames(%d, %d)\n", offset, length);
     for (int i = 0; i < length; i++) buf[i] = offset + i;
 }
 
+#ifdef DEBUG
 void print_buf(int buf_size, uint8_t *buf) {
     for (int i = 0; i < buf_size; i++) printf("%d ", buf[i]);
     printf("\n");
 }
 
 void print_delimiter() { printf("---------------------------------\n"); }
+#endif
 
 CyclicFragmentBuffer::CyclicFragmentBuffer(unsigned int size) {
     this->size = size;
@@ -65,7 +71,10 @@ void CyclicFragmentBuffer::refill(bool full = false) {
 
     filling = false;
 
+#ifdef DEBUG
     std::cout << "[Background Thread] Done\n";
+#endif
+
     cv.notify_all();
 }
 
@@ -76,6 +85,11 @@ void CyclicFragmentBuffer::advance(int buf_size) {
     size_present -= buf_size;
 }
 
+void CyclicFragmentBuffer::join_filler() {
+    if (filler.joinable()) filler.join();
+}
+
+#ifdef DEBUG
 void CyclicFragmentBuffer::print_stats() {
     printf(
         "head = %d, size_present = %zu, offset = %zu, cur_start = %zu, size = %zu, "
@@ -90,10 +104,7 @@ void CyclicFragmentBuffer::print_stats() {
 }
 
 void CyclicFragmentBuffer::print() { print_buf(size, buffer); }
-
-void CyclicFragmentBuffer::join_filler() {
-    if (filler.joinable()) filler.join();
-}
+#endif
 
 int read_packet(void *opaque, uint8_t *buf, int buf_size) {
     auto *bd = (struct CyclicFragmentBuffer *)opaque;
@@ -139,11 +150,15 @@ int read_packet(void *opaque, uint8_t *buf, int buf_size) {
         memcpy(buf + part1, bd->buffer, part2);
     }
 
+#ifdef DEBUG
     bd->print_stats();
+#endif
 
     bd->advance(buf_size);
 
+#ifdef DEBUG
     bd->print_stats();
+#endif
 
     if (bd->size_present <= bd->size / 2) {
         bd->join_filler();
