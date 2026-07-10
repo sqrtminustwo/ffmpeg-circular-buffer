@@ -1,0 +1,15 @@
+# ninja log v5
+2	26	1783698607044907840	CMakeFiles/my_tests.dir/src/mock_fetcher.cpp.o	a25271b7272b0d90
+2	58	1783698607075908400	CMakeFiles/my_tests.dir/src/default_buffer.cpp.o	eed4b26f30917ea7
+2	214	1783711079186408958	CMakeFiles/my_tests.dir/src/cfb.cpp.o	3ec6c973b4990e3
+2	518	1783711557207496401	CMakeFiles/my_tests.dir/src/test.cpp.o	36ad7ae4b9bc6798
+2	236	1783711556925494561	CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o	d99794d743d1155a
+484	542	1783711103321562758	my_tests	40a54cccc9bc25fb
+484	542	1783711103321562758	my_tests[1]_tests.cmake	40a54cccc9bc25fb
+484	542	1783711103321562758	/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug/my_tests[1]_tests.cmake	40a54cccc9bc25fb
+2	31	1783711582461661287	CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o	d9f354cfc803d07e
+2	70	1783711582500661542	CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o	e59f9f7a362f411e
+1	219	1783711582648662509	CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o	d99794d743d1155a
+219	276	1783711582707662894	my_tests	a351b59e2b919449
+219	276	1783711582707662894	my_tests[1]_tests.cmake	a351b59e2b919449
+219	276	1783711582707662894	/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug/my_tests[1]_tests.cmake	a351b59e2b919449

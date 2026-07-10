@@ -1,13 +1,15 @@
 #include <gtest/gtest.h>
-#include "cfb.hpp"
+#include "buffer/cfb.hpp"
+#include "fetcher/mock_fetcher.hpp"
 
 struct Test {
     static constexpr int bd_size = 10;
-    CyclicFragmentBuffer bd{bd_size};
+    MockFetcher fetcher{};
+    CyclicFragmentBuffer bd{&fetcher, bd_size};
     size_t buf_size;
     uint8_t *buf;
 
-    void rp() { read_packet(&bd, buf, buf_size); }
+    void rp() { bd.avio_read_packet(&bd, buf, buf_size); }
 
     Test() {
         bd.offset = 0;
@@ -20,6 +22,10 @@ struct Test {
 };
 
 Test t{};
+
+void equal_bufs(std::vector<int> buf_1, uint8_t *buf_2, size_t size) {
+    for (int i = 0; i < size; i++) EXPECT_EQ(buf_1[i], buf_2[i]);
+}
 
 TEST(FFmpegCircularBufferTest, BasicCircularLoadingTest) {
     int start_elem = 0;
@@ -44,6 +50,43 @@ TEST(FFmpegCircularBufferTest, NotLoadedOffsetTest) {
     };
 
     for (auto &i : {0, t.bd_size * 4, t.bd_size * 2}) test_full_buffer(i);
+}
+
+/*
+ * Tests paired to buf fixes
+ */
+
+TEST(FFmpegCircularBufferTest, DoesNotGoOutOfBounds) {
+    // We take t.bd_size / 2, because we want to test
+    // that it will not try to load t.bd_size bytes even when
+    // only t.bd_size / 2 bytes can be loaded as we are at
+    // the end of the file
+
+    auto total_size = t.fetcher.total_size;
+    auto should_be_loaded = t.bd_size / 2;
+    t.bd.offset = total_size - should_be_loaded;
+
+    t.rp();
+
+    // 3 bytes are read by rp
+    // thats why we subtract
+    EXPECT_EQ(t.bd.size_present, should_be_loaded - 3);
+    EXPECT_EQ(t.bd.base[t.bd.head + t.bd.size_present - 1], total_size - 1);
+}
+
+TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {
+    t.bd.offset = 0;
+
+    t.rp();
+    equal_bufs({0, 1, 2}, t.buf, 3);
+
+    t.bd.offset = 7;
+
+    t.rp();
+    equal_bufs({7, 8, 9}, t.buf, 3);
+
+    t.rp();
+    equal_bufs({10, 11, 12}, t.buf, 3);
 }
 
 int main(int argc, char **argv) {
