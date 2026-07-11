@@ -70,8 +70,8 @@ TEST(FFmpegCircularBufferTest, DoesNotGoOutOfBounds) {
 
     // 3 bytes are read by rp
     // thats why we subtract
-    EXPECT_EQ(t.bd.size_present, should_be_loaded - 3);
-    EXPECT_EQ(t.bd.base[t.bd.head + t.bd.size_present - 1], total_size - 1);
+    EXPECT_EQ(t.bd.get_size_present(), should_be_loaded - 3);
+    EXPECT_EQ(t.bd.base[t.bd.get_head() + t.bd.get_size_present() - 1], total_size - 1);
 }
 
 TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {

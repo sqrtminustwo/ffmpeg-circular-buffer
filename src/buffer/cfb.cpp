@@ -1,8 +1,6 @@
 #include <algorithm>
 #include <cassert>
-#include <condition_variable>
 #include <cstring>
-#include <mutex>
 #include <thread>
 #include "buffer/cfb.hpp"
 
@@ -10,6 +8,7 @@
 
 #ifdef DEBUG
 #include <iostream>
+
 void CyclicFragmentBuffer::print_stats() {
     printf(
         "head = %d, size_present = %d, offset = %d, cur_start = %d, size = %zu, "
@@ -39,41 +38,46 @@ CyclicFragmentBuffer::~CyclicFragmentBuffer() {
     delete[] base;
 }
 
-void CyclicFragmentBuffer::refill(bool full = false) {
-    // std::lock_guard<std::mutex> lock(mutex);
+int CyclicFragmentBuffer::get_size_present() const { return size_present; }
+int CyclicFragmentBuffer::get_head() const { return head; }
 
-    if (full) {
-        head = 0;
-        cur_start = offset;
-        size_present = 0;
+void CyclicFragmentBuffer::refill(RefillType refill_type) {
+    FillGuard cleanup{filling, cv};
+
+    int fill_start, offset_start, fill_size;
+
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        if (refill_type == FULL) {
+            head = 0;
+            cur_start = offset;
+            size_present = 0;
+        }
+
+        fill_start = (head + size_present) % size;
+        offset_start = cur_start + size_present;
+
+        fill_size = size - size_present;
+
+        int left_size = total_size - offset_start;
+        fill_size = std::min(fill_size, left_size);
+
+        if (fill_size <= 0) return;
     }
 
-    auto fill_start = (head + size_present) % size;
-    auto offset_start = cur_start + size_present;
-
-    int fill_size = size - size_present;
-    int left_size = total_size - offset;
-    fill_size = std::min(fill_size, left_size);
-
-    if (fill_size <= 0) return;
-
-    // TODO: abstract trough inheritance
-    if (fill_start <= head) fetcher->fetchFramesLocal(offset_start, base + fill_start, fill_size);
-    else {
+    if (fill_start + fill_size <= size) {
+        fetcher->fetchFramesLocal(offset_start, base + fill_start, fill_size);
+    } else {
         auto part1 = size - fill_start;
-        fetcher->fetchFramesLocal(offset_start, base + fill_start, size - fill_start);
-        fetcher->fetchFramesLocal(offset_start + part1, base, head);
+        fetcher->fetchFramesLocal(offset_start, base + fill_start, part1);
+        fetcher->fetchFramesLocal(offset_start + part1, base, fill_size - part1);
     }
 
-    size_present += fill_size;
-
-    // filling = false;
-    //
-    // #ifdef DEBUG
-    //     std::cout << "[Background Thread] Done\n";
-    // #endif
-    //
-    //     cv.notify_all();
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        size_present += fill_size;
+    }
 }
 
 void CyclicFragmentBuffer::advance(int buf_size) {
@@ -93,8 +97,8 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     // If filling thread has the lock the first line will stop threading errors
     // Ifspurious wakeup filling thread does not yet have lock second line will
     // While loop fixes spurious wakeup
-    // std::unique_lock<std::mutex> lock(mutex);
-    // while (filling) cv.wait(lock);
+    std::unique_lock<std::mutex> lock(mutex);
+    while (filling) cv.wait(lock);
 
     assert(size >= buf_size);
 
@@ -113,11 +117,10 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
 #endif
     if (not_enough || ahead || behind) {
         // TODO: reuse valid bytes
-        // lock.unlock();
-        refill(true);
-        // lock.lock();
+        lock.unlock();
+        refill(FULL);
+        lock.lock();
     }
-
     // Assumes necessary data is present
 
     auto start_in_buffer = (offset - cur_start) + head;
@@ -148,11 +151,12 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     print_stats();
     print_buf(size, base);
 #endif
-    // if (size_present <= size / 2) {
-    //     join_filler();
-    //     filling = true;
-    //     filler = std::thread(&CyclicFragmentBuffer::refill, this, false);
-    // }
+
+    if (size_present <= size / 2) {
+        join_filler();
+        filling = true;
+        filler = std::thread(&CyclicFragmentBuffer::refill, this, PARTIAL);
+    }
 
 #ifdef DEBUG
     print_buf(buf_size, buf);

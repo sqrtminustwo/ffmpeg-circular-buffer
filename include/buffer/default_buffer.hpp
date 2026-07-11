@@ -3,7 +3,7 @@
 
 #include "buffer.hpp"
 
-struct DefaultBuffer : public Buffer {
+class DefaultBuffer : public Buffer {
     int read(uint8_t *buf, int buf_size) override;
 };
 
