@@ -49,6 +49,7 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
     {
         std::lock_guard<std::mutex> lock(mutex);
 
+        // if (refill_type == FULL || refill_type == HALF) {
         if (refill_type == FULL) {
             head = 0;
             cur_start = offset;
@@ -58,6 +59,8 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
         fill_start = (head + size_present) % size;
         offset_start = cur_start + size_present;
 
+        // if (refill_type == HALF) fill_size = size / 2;
+        // else fill_size = size - size_present;
         fill_size = size - size_present;
 
         int left_size = total_size - offset_start;
@@ -141,7 +144,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
 #ifdef DEBUG
     // printf("before advance:\n");
     print_stats();
-    print_buf(size, base);
+    // print_buf(size, base);
 #endif
 
     advance(buf_size);
@@ -149,7 +152,8 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
 #ifdef DEBUG
     // printf("after advance:\n");
     print_stats();
-    print_buf(size, base);
+    // print_buf(size, base);
+    printf("size_present <= size / 2 = %d\n", size_present <= size / 2);
 #endif
 
     if (size_present <= size / 2) {
@@ -159,7 +163,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     }
 
 #ifdef DEBUG
-    print_buf(buf_size, buf);
+    // print_buf(buf_size, buf);
     printf("-------------------------------\n");
 #endif
 
