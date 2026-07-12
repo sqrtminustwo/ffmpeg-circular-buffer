@@ -4,7 +4,7 @@
 #include <atomic>
 #include <condition_variable>
 
-enum RefillType { PARTIAL, FULL, HALF };
+enum RefillType { PARTIAL, FULL, HALF, ARG };
 
 class FillGuard {
     std::atomic_bool &filling;
