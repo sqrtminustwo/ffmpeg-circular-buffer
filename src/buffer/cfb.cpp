@@ -15,10 +15,10 @@ void CyclicFragmentBuffer::print_stats() {
         "total_size = %zu\n",
         head,
         size_present,
-        offset,
+        get_offset(),
         cur_start,
         size,
-        total_size
+        get_total_size()
     );
 }
 
@@ -37,6 +37,12 @@ CyclicFragmentBuffer::~CyclicFragmentBuffer() {
     join_filler();
     delete[] base;
 }
+
+const char *MutexProtectedAccess::what() const noexcept {
+    return "Variable is protected by mutex, you can't access it.";
+}
+void CyclicFragmentBuffer::set_base(uint8_t *) { throw MutexProtectedAccess(); }
+uint8_t *CyclicFragmentBuffer::get_base() { throw MutexProtectedAccess(); }
 
 int CyclicFragmentBuffer::get_size_present() const { return size_present; }
 int CyclicFragmentBuffer::get_head() const { return head; }

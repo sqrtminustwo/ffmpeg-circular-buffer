@@ -1,37 +1,37 @@
 [
 {
   "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
-  "command": "/usr/bin/clang++ -DDEBUG -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/buffer.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/buffer.cpp",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/buffer.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/buffer.cpp",
   "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/buffer.cpp",
   "output": "CMakeFiles/my_tests.dir/src/buffer/buffer.cpp.o"
 },
 {
   "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
-  "command": "/usr/bin/clang++ -DDEBUG -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/cfb.cpp",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/cfb.cpp",
   "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/cfb.cpp",
   "output": "CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o"
 },
 {
   "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
-  "command": "/usr/bin/clang++ -DDEBUG -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/default_buffer.cpp",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/default_buffer.cpp",
   "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/default_buffer.cpp",
   "output": "CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o"
 },
 {
   "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
-  "command": "/usr/bin/clang++ -DDEBUG -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/fill_guard.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/fill_guard.cpp",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/buffer/fill_guard.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/fill_guard.cpp",
   "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/fill_guard.cpp",
   "output": "CMakeFiles/my_tests.dir/src/buffer/fill_guard.cpp.o"
 },
 {
   "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
-  "command": "/usr/bin/clang++ -DDEBUG -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/fetcher/mock_fetcher.cpp",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/fetcher/mock_fetcher.cpp",
   "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/fetcher/mock_fetcher.cpp",
   "output": "CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o"
 },
 {
   "directory": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug",
-  "command": "/usr/bin/clang++ -DDEBUG -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/test.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/test.cpp",
+  "command": "/usr/bin/clang++ -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/my_tests.dir/src/test.cpp.o -c /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/test.cpp",
   "file": "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/test.cpp",
   "output": "CMakeFiles/my_tests.dir/src/test.cpp.o"
 }

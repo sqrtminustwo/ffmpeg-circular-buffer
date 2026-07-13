@@ -5,7 +5,7 @@ project(my_project)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_compile_definitions(DEBUG)
+# add_compile_definitions(DEBUG)
 
 file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
