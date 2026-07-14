@@ -47,7 +47,7 @@ uint8_t *CyclicFragmentBuffer::get_base() { throw MutexProtectedAccess(); }
 int CyclicFragmentBuffer::get_size_present() const { return size_present; }
 int CyclicFragmentBuffer::get_head() const { return head; }
 
-void CyclicFragmentBuffer::refill(RefillType refill_type, int optional_fill_size) {
+void CyclicFragmentBuffer::refill(RefillType refill_type) {
     FillGuard cleanup{filling, cv};
 
     int fill_start, offset_start, fill_size;
@@ -55,7 +55,7 @@ void CyclicFragmentBuffer::refill(RefillType refill_type, int optional_fill_size
     {
         std::lock_guard<std::mutex> lock(mutex);
 
-        if (refill_type == FULL || refill_type == ARG) {
+        if (refill_type == FULL) {
             head = 0;
             cur_start = offset;
             size_present = 0;
@@ -64,10 +64,8 @@ void CyclicFragmentBuffer::refill(RefillType refill_type, int optional_fill_size
         fill_start = (head + size_present) % size;
         offset_start = cur_start + size_present;
 
-        if (refill_type == PARTIAL) fill_size = size - size_present;
-        else if (refill_type == FULL) fill_size = size;
-        else if (refill_type == ARG) fill_size = optional_fill_size;
-        else fill_size = 0;
+        if (refill_type == FULL) fill_size = size;
+        else fill_size = size - size_present;
 
         int left_size = total_size - offset_start;
         fill_size = std::min(fill_size, left_size);
@@ -126,12 +124,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
 #endif
     if (not_enough || ahead || behind) {
         lock.unlock();
-
         refill(FULL);
-        // if (buf_size <= size / 2) refill(HALF);
-        // else refill(FULL);
-        // refill(ARG, buf_size);
-
         lock.lock();
     }
 
@@ -170,7 +163,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     if (size_present <= size / 2) {
         join_filler();
         filling = true;
-        filler = std::thread(&CyclicFragmentBuffer::refill, this, PARTIAL, 0);
+        filler = std::thread(&CyclicFragmentBuffer::refill, this, PARTIAL);
     }
 
 #ifdef DEBUG

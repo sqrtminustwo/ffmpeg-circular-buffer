@@ -30,7 +30,7 @@ class CyclicFragmentBuffer : public Buffer {
 
     int read(uint8_t *buf, int buf_size) override;
 
-    void refill(RefillType, int = 0);
+    void refill(RefillType);
     void advance(int);
     void join_filler();
 
