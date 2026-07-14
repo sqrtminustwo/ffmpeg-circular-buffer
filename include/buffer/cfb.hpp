@@ -16,10 +16,10 @@ class MutexProtectedAccess : public std::exception {
 
 class CyclicFragmentBuffer : public Buffer {
     std::mutex mutex;
-    int head = 0;         // Position of start of valid buffer (locally)
-    int size_present = 0; // Currently amount of usable data present in buffer
-    int cur_start = 0;    // Local head -> global position in file
-    size_t size;          // Size of buffer
+    int head = 0;        // Position of start of valid buffer (locally)
+    int size_present{0}; // Currently amount of usable data present in buffer
+    int cur_start = 0;   // Local head -> global position in file
+    size_t size;         // Size of buffer
 
     std::thread filler;
 
@@ -30,13 +30,16 @@ class CyclicFragmentBuffer : public Buffer {
 
     int read(uint8_t *buf, int buf_size) override;
 
+    int non_valid_amount_present();
     void refill(RefillType);
     void advance(int);
     void join_filler();
 
   public:
+#ifndef TEST
     void set_base(uint8_t *) override;
     uint8_t *get_base() override;
+#endif
 
     int get_size_present() const;
     int get_head() const;

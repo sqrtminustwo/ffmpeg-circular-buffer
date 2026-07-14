@@ -71,7 +71,7 @@ TEST(FFmpegCircularBufferTest, DoesNotGoOutOfBounds) {
     // 3 bytes are read by rp
     // thats why we subtract
     EXPECT_EQ(t.bd.get_size_present(), should_be_loaded - 3);
-    // EXPECT_EQ(t.bd.base[t.bd.get_head() + t.bd.get_size_present() - 1], total_size - 1);
+    EXPECT_EQ(t.bd.get_base()[t.bd.get_head() + t.bd.get_size_present() - 1], total_size - 1);
 }
 
 TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {
@@ -87,6 +87,15 @@ TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {
 
     t.rp();
     equal_bufs({10, 11, 12}, t.buf, 3);
+}
+
+TEST(FFmpegCircularBufferTest, OffsetInBoundsButNotEnoughData) {
+    t.bd.set_offset(0);
+    t.rp();
+
+    t.bd.set_offset(8);
+    t.rp();
+    equal_bufs({8, 9, 10}, t.buf, 3);
 }
 
 int main(int argc, char **argv) {

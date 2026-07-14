@@ -41,8 +41,11 @@ CyclicFragmentBuffer::~CyclicFragmentBuffer() {
 const char *MutexProtectedAccess::what() const noexcept {
     return "Variable is protected by mutex, you can't access it.";
 }
+
+#ifndef TEST
 void CyclicFragmentBuffer::set_base(uint8_t *) { throw MutexProtectedAccess(); }
 uint8_t *CyclicFragmentBuffer::get_base() { throw MutexProtectedAccess(); }
+#endif
 
 int CyclicFragmentBuffer::get_size_present() const { return size_present; }
 int CyclicFragmentBuffer::get_head() const { return head; }
@@ -65,7 +68,8 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
         offset_start = cur_start + size_present;
 
         if (refill_type == FULL) fill_size = size;
-        else fill_size = size - size_present;
+        else if (refill_type == PARTIAL) fill_size = size - size_present;
+        else fill_size = 0;
 
         int left_size = total_size - offset_start;
         fill_size = std::min(fill_size, left_size);
@@ -85,10 +89,16 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
         std::lock_guard<std::mutex> lock(mutex);
         size_present += fill_size;
     }
+
+#ifdef DEBUG
+    std::cout << "Filling done\n";
+#endif
 }
 
+int CyclicFragmentBuffer::non_valid_amount_present() { return offset - cur_start; }
+
 void CyclicFragmentBuffer::advance(int buf_size) {
-    auto consumed_size = (offset - cur_start) + buf_size;
+    auto consumed_size = non_valid_amount_present() + buf_size;
 
     offset += buf_size;
     cur_start += consumed_size;
@@ -115,7 +125,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     // Needed because function pointer is passed to ffmpeg function
     if (buf_size <= 0) return -1; // End of file
 
-    auto not_enough = size_present <= buf_size;
+    auto not_enough = (size_present - non_valid_amount_present()) <= buf_size;
     auto ahead = offset < cur_start;
     auto behind = cur_start + size_present < offset;
 
@@ -157,7 +167,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     // printf("after advance:\n");
     print_stats();
     // print_buf(size, base);
-    printf("size_present <= size / 2 = %d\n", size_present <= size / 2);
+    printf("size_present <= size / 2 = %d\n", size_present <= (int)size / 2);
 #endif
 
     if (size_present <= size / 2) {

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 project(my_project)
 
-# GoogleTest requires at least C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+add_compile_definitions(TEST)
 # add_compile_definitions(DEBUG)
 
 file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS

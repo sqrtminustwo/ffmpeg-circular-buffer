@@ -50,6 +50,7 @@ cmake_ninja_workdir = /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer
 build cmake_object_order_depends_target_my_tests: phony || CMakeFiles/my_tests.dir
 
 build CMakeFiles/my_tests.dir/src/buffer/buffer.cpp.o: CXX_COMPILER__my_tests_unscanned_Debug /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/buffer.cpp || cmake_object_order_depends_target_my_tests
+  DEFINES = -DTEST
   DEP_FILE = CMakeFiles/my_tests.dir/src/buffer/buffer.cpp.o.d
   FLAGS = -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1
   INCLUDES = -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include
@@ -57,6 +58,7 @@ build CMakeFiles/my_tests.dir/src/buffer/buffer.cpp.o: CXX_COMPILER__my_tests_un
   OBJECT_FILE_DIR = CMakeFiles/my_tests.dir/src/buffer
 
 build CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o: CXX_COMPILER__my_tests_unscanned_Debug /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/cfb.cpp || cmake_object_order_depends_target_my_tests
+  DEFINES = -DTEST
   DEP_FILE = CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o.d
   FLAGS = -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1
   INCLUDES = -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include
@@ -64,6 +66,7 @@ build CMakeFiles/my_tests.dir/src/buffer/cfb.cpp.o: CXX_COMPILER__my_tests_unsca
   OBJECT_FILE_DIR = CMakeFiles/my_tests.dir/src/buffer
 
 build CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o: CXX_COMPILER__my_tests_unscanned_Debug /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/default_buffer.cpp || cmake_object_order_depends_target_my_tests
+  DEFINES = -DTEST
   DEP_FILE = CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o.d
   FLAGS = -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1
   INCLUDES = -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include
@@ -71,6 +74,7 @@ build CMakeFiles/my_tests.dir/src/buffer/default_buffer.cpp.o: CXX_COMPILER__my_
   OBJECT_FILE_DIR = CMakeFiles/my_tests.dir/src/buffer
 
 build CMakeFiles/my_tests.dir/src/buffer/fill_guard.cpp.o: CXX_COMPILER__my_tests_unscanned_Debug /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/buffer/fill_guard.cpp || cmake_object_order_depends_target_my_tests
+  DEFINES = -DTEST
   DEP_FILE = CMakeFiles/my_tests.dir/src/buffer/fill_guard.cpp.o.d
   FLAGS = -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1
   INCLUDES = -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include
@@ -78,6 +82,7 @@ build CMakeFiles/my_tests.dir/src/buffer/fill_guard.cpp.o: CXX_COMPILER__my_test
   OBJECT_FILE_DIR = CMakeFiles/my_tests.dir/src/buffer
 
 build CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o: CXX_COMPILER__my_tests_unscanned_Debug /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/fetcher/mock_fetcher.cpp || cmake_object_order_depends_target_my_tests
+  DEFINES = -DTEST
   DEP_FILE = CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o.d
   FLAGS = -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1
   INCLUDES = -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include
@@ -85,6 +90,7 @@ build CMakeFiles/my_tests.dir/src/fetcher/mock_fetcher.cpp.o: CXX_COMPILER__my_t
   OBJECT_FILE_DIR = CMakeFiles/my_tests.dir/src/fetcher
 
 build CMakeFiles/my_tests.dir/src/test.cpp.o: CXX_COMPILER__my_tests_unscanned_Debug /home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/src/test.cpp || cmake_object_order_depends_target_my_tests
+  DEFINES = -DTEST
   DEP_FILE = CMakeFiles/my_tests.dir/src/test.cpp.o.d
   FLAGS = -g -std=gnu++17 -DGTEST_HAS_PTHREAD=1
   INCLUDES = -I/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/include
