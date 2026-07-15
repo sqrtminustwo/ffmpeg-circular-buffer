@@ -1,10 +1,15 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <mutex>
 #include <thread>
+#include <cstdio>
 #include "buffer/cfb.hpp"
 
-#include <cstdio>
+using namespace std;
+
+using write_lock = unique_lock<shared_mutex>;
+using read_lock = shared_lock<shared_mutex>;
 
 #ifdef DEBUG
 #include <iostream>
@@ -51,12 +56,10 @@ int CyclicFragmentBuffer::get_size_present() const { return size_present; }
 int CyclicFragmentBuffer::get_head() const { return head; }
 
 void CyclicFragmentBuffer::refill(RefillType refill_type) {
-    FillGuard cleanup{filling, cv};
-
     int fill_start, offset_start, fill_size;
 
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        write_lock lock(mutex);
 
         if (refill_type == FULL) {
             head = 0;
@@ -72,7 +75,7 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
         else fill_size = 0;
 
         int left_size = total_size - offset_start;
-        fill_size = std::min(fill_size, left_size);
+        fill_size = min(fill_size, left_size);
 
         if (fill_size <= 0) return;
     }
@@ -86,18 +89,20 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
     }
 
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        write_lock lock(mutex);
         size_present += fill_size;
     }
 
 #ifdef DEBUG
-    std::cout << "Filling done\n";
+    cout << "Filling done\n";
 #endif
 }
 
 int CyclicFragmentBuffer::non_valid_amount_present() { return offset - cur_start; }
 
 void CyclicFragmentBuffer::advance(int buf_size) {
+    write_lock lock{mutex};
+
     auto consumed_size = non_valid_amount_present() + buf_size;
 
     offset += buf_size;
@@ -111,75 +116,88 @@ void CyclicFragmentBuffer::join_filler() {
 }
 
 int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
-    // If filling thread has the lock the first line will stop threading errors
-    // Ifspurious wakeup filling thread does not yet have lock second line will
-    // While loop fixes spurious wakeup
-    std::unique_lock<std::mutex> lock(mutex);
-    while (filling) cv.wait(lock);
+    {
+        // If filling thread has the lock the first line will stop threading errors
+        // Ifspurious wakeup filling thread does not yet have lock second line will
+        // While loop fixes spurious wakeup
+        read_lock lock{mutex};
 
-    assert(size >= buf_size);
+        assert(size >= buf_size);
 
-    int bytes_left = total_size - offset;
-    buf_size = std::min(buf_size, bytes_left);
+        int bytes_left = total_size - offset;
+        buf_size = min(buf_size, bytes_left);
 
-    // Needed because function pointer is passed to ffmpeg function
-    if (buf_size <= 0) return -1; // End of file
+        // Needed because function pointer is passed to ffmpeg function
+        if (buf_size <= 0) return -1; // End of file
 
-    auto not_enough = (size_present - non_valid_amount_present()) <= buf_size;
-    auto ahead = offset < cur_start;
-    auto behind = cur_start + size_present < offset;
+        bool not_enough = false, ahead = false, behind = false;
+
+        auto out_of_order = [&]() {
+            not_enough = (size_present - non_valid_amount_present()) <= buf_size;
+            ahead = offset < cur_start;
+            behind = cur_start + size_present < offset;
+
+            return not_enough || ahead || behind;
+        };
+
+        // There might be a filler thread that will get the needed bytes already in progress
+        if (out_of_order()) {
+            lock.unlock();
+            join_filler();
+            lock.lock();
+        }
+
+        if (out_of_order()) {
+            lock.unlock();
+            refill(FULL);
+            lock.lock();
+        }
+
+        // Assumes necessary data is present
+
+        auto start_in_buffer = (offset - cur_start) + head;
+        start_in_buffer %= size;
+
+        auto end_in_buffer = start_in_buffer + buf_size;
+        end_in_buffer %= size;
+
+        if (end_in_buffer > start_in_buffer) memcpy(buf, base + start_in_buffer, buf_size);
+        else {
+            auto part1 = size - start_in_buffer;
+            auto part2 = buf_size - part1;
+
+            memcpy(buf, base + start_in_buffer, part1);
+            memcpy(buf + part1, base, part2);
+        }
 
 #ifdef DEBUG
-    printf("not_enough = %d, ahead = %d, behind = %d\n", not_enough, ahead, behind);
+        print_stats();
+        // print_buf(size, base);
 #endif
-    if (not_enough || ahead || behind) {
-        lock.unlock();
-        refill(FULL);
-        lock.lock();
     }
-
-    // Assumes necessary data is present
-
-    auto start_in_buffer = (offset - cur_start) + head;
-    start_in_buffer %= size;
-
-    auto end_in_buffer = start_in_buffer + buf_size;
-    end_in_buffer %= size;
-
-    if (end_in_buffer > start_in_buffer) memcpy(buf, base + start_in_buffer, buf_size);
-    else {
-        auto part1 = size - start_in_buffer;
-        auto part2 = buf_size - part1;
-
-        memcpy(buf, base + start_in_buffer, part1);
-        memcpy(buf + part1, base, part2);
-    }
-
-#ifdef DEBUG
-    // printf("before advance:\n");
-    print_stats();
-    // print_buf(size, base);
-#endif
 
     advance(buf_size);
 
+    {
+        read_lock lock(mutex);
+
 #ifdef DEBUG
-    // printf("after advance:\n");
-    print_stats();
-    // print_buf(size, base);
-    printf("size_present <= size / 2 = %d\n", size_present <= (int)size / 2);
+        print_stats();
+        printf("size_present <= size / 2 = %d\n", size_present <= (int)size / 2);
 #endif
 
-    if (size_present <= size / 2) {
-        join_filler();
-        filling = true;
-        filler = std::thread(&CyclicFragmentBuffer::refill, this, PARTIAL);
+        if (size_present <= size / 2) {
+            // For now only 1 filler thread can be run at the same time
+            lock.unlock();
+            join_filler();
+            lock.lock();
+            filler = thread(&CyclicFragmentBuffer::refill, this, PARTIAL);
+        }
+
+#ifdef DEBUG
+        printf("-------------------------------\n");
+#endif
     }
-
-#ifdef DEBUG
-    // print_buf(buf_size, buf);
-    printf("-------------------------------\n");
-#endif
 
     return buf_size;
 }

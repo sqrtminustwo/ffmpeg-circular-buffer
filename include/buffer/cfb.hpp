@@ -2,12 +2,11 @@
 #define CYCLIC_FRAGMENT_BUFFER_H
 
 #include "buffer.hpp"
-#include "buffer/fill_guard.hpp"
 #include "fetcher/data_fetcher.hpp"
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
+#include <shared_mutex>
 #include <thread>
+
+enum RefillType { PARTIAL, FULL };
 
 class MutexProtectedAccess : public std::exception {
   public:
@@ -15,16 +14,13 @@ class MutexProtectedAccess : public std::exception {
 };
 
 class CyclicFragmentBuffer : public Buffer {
-    std::mutex mutex;
+    std::shared_mutex mutex;
     int head = 0;        // Position of start of valid buffer (locally)
     int size_present{0}; // Currently amount of usable data present in buffer
     int cur_start = 0;   // Local head -> global position in file
     size_t size;         // Size of buffer
 
     std::thread filler;
-
-    std::condition_variable cv;
-    std::atomic_bool filling = false;
 
     DataFetcher *fetcher;
 

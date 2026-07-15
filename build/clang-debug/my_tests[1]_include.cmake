@@ -1,5 +1,0 @@
-if(EXISTS "/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug/my_tests[1]_tests.cmake")
-  include("/home/main-ubuntu/coding/C++Projects/WebStream/VideoPlayer/external/ffmpeg-circular-buffer/build/clang-debug/my_tests[1]_tests.cmake")
-else()
-  add_test(my_tests_NOT_BUILT my_tests_NOT_BUILT)
-endif()
