@@ -8,8 +8,8 @@
 
 using namespace std;
 
-using write_lock = unique_lock<shared_mutex>;
-using read_lock = shared_lock<shared_mutex>;
+#define WRITE_LOCK unique_lock<shared_mutex> lock{mutex};
+#define READ_LOCK shared_lock<shared_mutex> lock{mutex};
 
 #ifdef DEBUG
 #include <iostream>
@@ -59,7 +59,7 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
     int fill_start, offset_start, fill_size;
 
     {
-        write_lock lock(mutex);
+        WRITE_LOCK;
 
         if (refill_type == FULL) {
             head = 0;
@@ -89,7 +89,7 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
     }
 
     {
-        write_lock lock(mutex);
+        WRITE_LOCK;
         size_present += fill_size;
     }
 
@@ -101,7 +101,7 @@ void CyclicFragmentBuffer::refill(RefillType refill_type) {
 int CyclicFragmentBuffer::non_valid_amount_present() { return offset - cur_start; }
 
 void CyclicFragmentBuffer::advance(int buf_size) {
-    write_lock lock{mutex};
+    WRITE_LOCK;
 
     auto consumed_size = non_valid_amount_present() + buf_size;
 
@@ -120,7 +120,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
         // If filling thread has the lock the first line will stop threading errors
         // Ifspurious wakeup filling thread does not yet have lock second line will
         // While loop fixes spurious wakeup
-        read_lock lock{mutex};
+        READ_LOCK;
 
         assert(size >= buf_size);
 
@@ -179,7 +179,7 @@ int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
     advance(buf_size);
 
     {
-        read_lock lock(mutex);
+        READ_LOCK;
 
 #ifdef DEBUG
         print_stats();
