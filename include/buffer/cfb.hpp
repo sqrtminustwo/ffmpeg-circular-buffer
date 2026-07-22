@@ -34,7 +34,7 @@ class CyclicFragmentBuffer : public Buffer {
   public:
 #ifndef TEST
     void set_base(uint8_t *) override;
-    uint8_t *get_base() override;
+    uint8_t *get_base() const override;
 #endif
 
     int get_size_present() const;

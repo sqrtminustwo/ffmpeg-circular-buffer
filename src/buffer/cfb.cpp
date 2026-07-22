@@ -49,7 +49,7 @@ const char *MutexProtectedAccess::what() const noexcept {
 
 #ifndef TEST
 void CyclicFragmentBuffer::set_base(uint8_t *) { throw MutexProtectedAccess(); }
-uint8_t *CyclicFragmentBuffer::get_base() { throw MutexProtectedAccess(); }
+uint8_t *CyclicFragmentBuffer::get_base() const { throw MutexProtectedAccess(); }
 #endif
 
 int CyclicFragmentBuffer::get_size_present() const { return size_present; }

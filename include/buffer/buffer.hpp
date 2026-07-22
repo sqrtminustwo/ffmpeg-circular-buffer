@@ -19,12 +19,12 @@ class Buffer {
   public:
     virtual ~Buffer() = default;
 
-    int get_offset();
+    int get_offset() const;
     void set_offset(int);
-    size_t get_total_size();
+    size_t get_total_size() const;
     void set_total_size(size_t);
     virtual void set_base(uint8_t *);
-    virtual uint8_t *get_base();
+    virtual uint8_t *get_base() const;
 
     static int avio_read_packet(void *opaque, uint8_t *buf, int buf_size) {
         auto *b = static_cast<Buffer *>(opaque);
