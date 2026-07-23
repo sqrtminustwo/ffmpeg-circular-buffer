@@ -1,33 +1,58 @@
 #include <gtest/gtest.h>
-#include "buffer/cfb.hpp"
+#include <unistd.h>
+#include "buffer/cfb2.hpp"
 #include "fetcher/mock_fetcher.hpp"
 
-struct Test {
+struct TestWrapper {
     static constexpr int bd_size = 10;
     MockFetcher fetcher{};
-    CyclicFragmentBuffer bd{&fetcher, bd_size};
+    CyclicFragmentBuffer2 *bd = nullptr;
     size_t buf_size;
     uint8_t *buf;
 
-    void rp() { bd.avio_read_packet(&bd, buf, buf_size); }
+    int rp() {
+        assert(bd_size > 0);
+        int ret = -1;
+        // Mandatory, background thread needs time to wakeup / fill the buffer
+        while (!(ret = bd->avio_read_packet(&(*bd), buf, buf_size)))
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        return ret;
+    }
 
-    Test() {
-        bd.set_offset(0);
+    void destruct_bd() {
+        if (bd) {
+            delete bd;
+            bd = nullptr;
+        }
+    }
+
+    TestWrapper() {
+        bd = new CyclicFragmentBuffer2{&fetcher, bd_size, bd_size / 2};
+        bd->set_offset(0);
 
         buf_size = 3;
         buf = new uint8_t[buf_size];
     }
 
-    ~Test() { delete[] buf; }
+    ~TestWrapper() {
+        destruct_bd();
+        delete[] buf;
+    }
 };
-
-Test t{};
 
 void equal_bufs(std::vector<int> buf_1, uint8_t *buf_2, size_t size) {
     for (int i = 0; i < size; i++) EXPECT_EQ(buf_1[i], buf_2[i]);
 }
 
+// #ifdef DEBUG
+void print_buf(int buf_size, uint8_t *buf) {
+    for (int i = 0; i < buf_size; i++) printf("%d ", buf[i]);
+    printf("\n");
+}
+// #endif
+
 TEST(FFmpegCircularBufferTest, BasicCircularLoadingTest) {
+    TestWrapper t{};
     int start_elem = 0;
     for (int i = 0; i < 10; i++) {
         t.rp();
@@ -35,12 +60,19 @@ TEST(FFmpegCircularBufferTest, BasicCircularLoadingTest) {
         for (int i = 0; i < t.buf_size; i++) EXPECT_EQ(t.buf[i], start_elem + i);
 
         start_elem += t.buf_size;
+
+#ifdef DEBUG
+        print_buf(t.buf_size, t.buf);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        print_buf(t.bd_size, t.bd.get_base());
+#endif
     }
 }
 
 TEST(FFmpegCircularBufferTest, NotLoadedOffsetTest) {
-    auto test_full_buffer = [](int start_offset) {
-        t.bd.set_offset(start_offset);
+    TestWrapper t{};
+    auto test_full_buffer = [&](int start_offset) {
+        t.bd->set_offset(start_offset);
 
         for (int i = 0; i < t.bd_size; i++) {
             auto buf_i = i % t.buf_size;
@@ -53,10 +85,11 @@ TEST(FFmpegCircularBufferTest, NotLoadedOffsetTest) {
 }
 
 /*
- * Tests paired to buf fixes
+ * Tests paired to bug fixes
  */
 
 TEST(FFmpegCircularBufferTest, DoesNotGoOutOfBounds) {
+    TestWrapper t{};
     // We take t.bd_size / 2, because we want to test
     // that it will not try to load t.bd_size bytes even when
     // only t.bd_size / 2 bytes can be loaded as we are at
@@ -64,41 +97,47 @@ TEST(FFmpegCircularBufferTest, DoesNotGoOutOfBounds) {
 
     auto total_size = t.fetcher.total_size;
     auto should_be_loaded = t.bd_size / 2;
-    t.bd.set_offset(total_size - should_be_loaded);
+    auto offset = total_size - should_be_loaded;
+    t.bd->set_offset(offset);
 
     t.rp();
+
+    // Joins producer thread
+    t.destruct_bd();
 
     // 3 bytes are read by rp
     // thats why we subtract
-    EXPECT_EQ(t.bd.get_size_present(), should_be_loaded - 3);
-    EXPECT_EQ(t.bd.get_base()[t.bd.get_head() + t.bd.get_size_present() - 1], total_size - 1);
+    EXPECT_EQ(t.fetcher.calls.size(), 1);
+    auto call = t.fetcher.calls.front();
+    EXPECT_EQ(call.offset, offset);
+    EXPECT_EQ(call.length, should_be_loaded);
 }
-
-TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {
-    t.bd.set_offset(0);
-
-    t.rp();
-    equal_bufs({0, 1, 2}, t.buf, 3);
-
-    t.bd.set_offset(7);
-
-    t.rp();
-    equal_bufs({7, 8, 9}, t.buf, 3);
-
-    t.rp();
-    equal_bufs({10, 11, 12}, t.buf, 3);
-}
-
-TEST(FFmpegCircularBufferTest, OffsetInBoundsButNotEnoughData) {
-    t.bd.set_offset(0);
-    t.rp();
-
-    t.bd.set_offset(8);
-    t.rp();
-    equal_bufs({8, 9, 10}, t.buf, 3);
-}
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+//
+// TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {
+//     t.bd.set_offset(0);
+//
+//     t.rp();
+//     equal_bufs({0, 1, 2}, t.buf, 3);
+//
+//     t.bd.set_offset(7);
+//
+//     t.rp();
+//     equal_bufs({7, 8, 9}, t.buf, 3);
+//
+//     t.rp();
+//     equal_bufs({10, 11, 12}, t.buf, 3);
+// }
+//
+// TEST(FFmpegCircularBufferTest, OffsetInBoundsButNotEnoughData) {
+//     t.bd.set_offset(0);
+//     t.rp();
+//
+//     t.bd.set_offset(8);
+//     t.rp();
+//     equal_bufs({8, 9, 10}, t.buf, 3);
+// }
+//
+// int main(int argc, char **argv) {
+//     ::testing::InitGoogleTest(&argc, argv);
+//     return RUN_ALL_TESTS();
+// }

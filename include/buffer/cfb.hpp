@@ -24,6 +24,9 @@ class CyclicFragmentBuffer : public Buffer {
 
     DataFetcher *fetcher;
 
+    // Producer thread
+    void operator()();
+
     int read(uint8_t *buf, int buf_size) override;
 
     int non_valid_amount_present();
@@ -40,7 +43,7 @@ class CyclicFragmentBuffer : public Buffer {
     int get_size_present() const;
     int get_head() const;
 
-    CyclicFragmentBuffer(DataFetcher *, unsigned int size);
+    CyclicFragmentBuffer(DataFetcher *, size_t size);
     ~CyclicFragmentBuffer() override;
 
 #ifdef DEBUG

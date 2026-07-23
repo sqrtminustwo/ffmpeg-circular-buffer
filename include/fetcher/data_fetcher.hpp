@@ -3,9 +3,11 @@
 
 #include <cstdint>
 
+using int_type = int64_t;
+
 struct DataFetcher {
     virtual int getTotalSizeLocal() = 0;
-    virtual void fetchFramesLocal(int offset, uint8_t *buf, int length) = 0;
+    virtual void fetchFramesLocal(int_type offset, uint8_t *buf, int_type length) = 0;
 };
 
 #endif
