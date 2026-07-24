@@ -25,7 +25,11 @@ CyclicFragmentBuffer::~CyclicFragmentBuffer() {
     RELEASE(produce, false);
     wake_up_producer();
     if (producer_thread.joinable()) producer_thread.join();
+
+#ifdef DEBUF
     printf("Producer thread finito\n");
+#endif
+
     delete[] base;
 }
 

@@ -11,12 +11,17 @@ struct FetchFramesCall {
 
     FetchFramesCall(int_type offset, int_type length);
 
+    bool operator==(FetchFramesCall const &other) const;
+    bool operator!=(FetchFramesCall const &other) const;
+
     friend std::ostream &operator<<(std::ostream &, const FetchFramesCall &);
 };
 
 struct MockFetcher : public DataFetcher {
     static constexpr int total_size = 100;
     std::vector<FetchFramesCall> calls{};
+
+    void print_all_calls() const;
 
     int getTotalSizeLocal() override;
     void fetchFramesLocal(int_type offset, uint8_t *buf, int_type length) override;

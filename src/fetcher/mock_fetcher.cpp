@@ -3,9 +3,20 @@
 FetchFramesCall::FetchFramesCall(int_type offset, int_type length)
     : offset{offset}, length{length} {}
 
+bool FetchFramesCall::operator==(FetchFramesCall const &other) const {
+    return offset == other.offset && length == other.length;
+}
+bool FetchFramesCall::operator!=(FetchFramesCall const &other) const {
+    return offset != other.offset || length != other.length;
+}
+
 std::ostream &operator<<(std::ostream &os, const FetchFramesCall &obj) {
     os << "FetchFramesCall{offset = " << obj.offset << ", length = " << obj.length << "}";
     return os;
+}
+
+void MockFetcher::print_all_calls() const {
+    for (auto &call : calls) std::cout << call << "\n";
 }
 
 int MockFetcher::getTotalSizeLocal() { return total_size; }

@@ -13,11 +13,7 @@ struct TestWrapper {
 
     int rp() {
         assert(bd_size > 0);
-        int ret = -1;
-        // Mandatory, background thread needs time to wakeup / fill the buffer
-        while (!(ret = bd->avio_read_packet(&(*bd), buf, buf_size)))
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        return ret;
+        return bd->avio_read_packet(&(*bd), buf, buf_size);
     }
 
     void destruct_bd() {
@@ -101,6 +97,17 @@ TEST(FFmpegCircularBufferTest, NotLoadedOffsetTest) {
     for (auto &i : {0, t.bd_size * 4}) test_full_buffer(i);
 }
 
+TEST(FFmpegCircularBufferTest, BufClampedToBytesLeft) {
+    TestWrapper t{};
+    t.bd->set_offset(98);
+
+    int ret;
+    ret = t.rp();
+    EXPECT_EQ(ret, 2);
+    ret = t.rp();
+    EXPECT_EQ(ret, 0);
+}
+
 /*
  * Tests paired to bug fixes
  */
@@ -130,9 +137,7 @@ TEST(FFmpegCircularBufferTest, DoesNotGoOutOfBounds) {
     for (auto &call : t.fetcher.calls) std::cout << call << "\n";
 #endif
 
-    auto call = t.fetcher.calls.front();
-    EXPECT_EQ(call.offset, offset);
-    EXPECT_EQ(call.length, should_be_loaded);
+    EXPECT_EQ(t.fetcher.calls.front(), FetchFramesCall(offset, should_be_loaded));
 }
 
 TEST(FFmpegCircularBufferTest, InBoundsNotEnoughOnSecondAsk) {
@@ -183,8 +188,15 @@ TEST(FFmpegCircularBufferTest, OffsetInBoundsButNotEnoughData) {
     equal_bufs({8, 9, 10}, t.buf, 3);
 }
 
-TEST(FFmpegCircularBufferTest, DifferentBytesLeftInReadAndProduce) {
+TEST(FFmpegCircularBufferTest, BytesLeftLessThenFreeSpace) {
     TestWrapper t{};
+    t.bd->set_offset(88);
 
-    // TODO:
+    for (int i = 0; i < 4; i++) t.rp();
+
+#ifdef DEBUG
+    t.fetcher.print_all_calls();
+#endif
+
+    EXPECT_EQ(t.fetcher.calls.back(), FetchFramesCall(98, 2));
 }
