@@ -20,7 +20,7 @@ class Buffer {
     virtual ~Buffer() = default;
 
     int get_offset() const;
-    void set_offset(int);
+    virtual void set_offset(int);
     size_t get_total_size() const;
     void set_total_size(size_t);
     virtual void set_base(uint8_t *);

@@ -1,203 +1,182 @@
-// #include <algorithm>
-// #include <cassert>
-// #include <cstring>
-// #include <mutex>
-// #include <thread>
-// #include <cstdio>
-// #include "buffer/cfb.hpp"
-//
-// using namespace std;
-//
-// #define WRITE_LOCK unique_lock<shared_mutex> lock{mutex};
-// #define READ_LOCK shared_lock<shared_mutex> lock{mutex};
-//
-// #ifdef DEBUG
-// #include <iostream>
-//
-// void CyclicFragmentBuffer::print_stats() {
-//     printf(
-//         "head = %d, size_present = %d, offset = %d, cur_start = %d, size = %zu, "
-//         "total_size = %zu\n",
-//         head,
-//         size_present,
-//         get_offset(),
-//         cur_start,
-//         size,
-//         get_total_size()
-//     );
-// }
-//
-// void print_buf(int buf_size, uint8_t *buf) {
-//     for (int i = 0; i < buf_size; i++) printf("%d ", buf[i]);
-//     printf("\n");
-// }
-// #endif
-//
-// CyclicFragmentBuffer::CyclicFragmentBuffer(DataFetcher *fetcher, size_t size)
-//     : fetcher{fetcher}, size{size} {
-//     total_size = fetcher->getTotalSizeLocal();
-//     base = new uint8_t[size];
-// }
-// CyclicFragmentBuffer::~CyclicFragmentBuffer() {
-//     join_filler();
-//     delete[] base;
-// }
-//
-// const char *MutexProtectedAccess::what() const noexcept {
-//     return "Variable is protected by mutex, you can't access it.";
-// }
-//
-// #ifndef TEST
-// void CyclicFragmentBuffer::set_base(uint8_t *) { throw MutexProtectedAccess(); }
-// uint8_t *CyclicFragmentBuffer::get_base() const { throw MutexProtectedAccess(); }
-// #endif
-//
-// int CyclicFragmentBuffer::get_size_present() const { return size_present; }
-// int CyclicFragmentBuffer::get_head() const { return head; }
-//
-// void CyclicFragmentBuffer::refill(RefillType refill_type) {
-//     int fill_start, offset_start, fill_size;
-//
-//     {
-//         WRITE_LOCK;
-//
-//         if (refill_type == FULL) {
-//             head = 0;
-//             cur_start = offset;
-//             size_present = 0;
-//         }
-//
-//         fill_start = (head + size_present) % size;
-//         offset_start = cur_start + size_present;
-//
-//         if (refill_type == FULL) fill_size = size;
-//         else if (refill_type == PARTIAL) fill_size = size - size_present;
-//         else fill_size = 0;
-//
-//         int left_size = total_size - offset_start;
-//         fill_size = min(fill_size, left_size);
-//
-//         if (fill_size <= 0) return;
-//     }
-//
-//     if (fill_start + fill_size <= size) {
-//         fetcher->fetchFramesLocal(offset_start, base + fill_start, fill_size);
-//     } else {
-//         auto part1 = size - fill_start;
-//         fetcher->fetchFramesLocal(offset_start, base + fill_start, part1);
-//         fetcher->fetchFramesLocal(offset_start + part1, base, fill_size - part1);
-//     }
-//
-//     {
-//         WRITE_LOCK;
-//         size_present += fill_size;
-//     }
-//
-// #ifdef DEBUG
-//     cout << "Filling done\n";
-// #endif
-// }
-//
-// int CyclicFragmentBuffer::non_valid_amount_present() { return offset - cur_start; }
-//
-// void CyclicFragmentBuffer::advance(int buf_size) {
-//     WRITE_LOCK;
-//
-//     auto consumed_size = non_valid_amount_present() + buf_size;
-//
-//     offset += buf_size;
-//     cur_start += consumed_size;
-//     size_present -= consumed_size;
-//     head = (head + consumed_size) % size;
-// }
-//
-// void CyclicFragmentBuffer::join_filler() {
-//     if (filler.joinable()) filler.join();
-// }
-//
-// int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
-//     {
-//         // If filling thread has the lock the first line will stop threading errors
-//         // Ifspurious wakeup filling thread does not yet have lock second line will
-//         // While loop fixes spurious wakeup
-//         READ_LOCK;
-//
-//         assert(size >= buf_size);
-//
-//         int bytes_left = total_size - offset;
-//         buf_size = min(buf_size, bytes_left);
-//
-//         // Needed because function pointer is passed to ffmpeg function
-//         if (buf_size <= 0) return -1; // End of file
-//
-//         bool not_enough = false, ahead = false, behind = false;
-//
-//         auto out_of_order = [&]() {
-//             not_enough = (size_present - non_valid_amount_present()) <= buf_size;
-//             ahead = offset < cur_start;
-//             behind = cur_start + size_present < offset;
-//
-//             return not_enough || ahead || behind;
-//         };
-//
-//         // There might be a filler thread that will get the needed bytes already in progress
-//         if (out_of_order()) {
-//             lock.unlock();
-//             join_filler();
-//             lock.lock();
-//         }
-//
-//         if (out_of_order()) {
-//             lock.unlock();
-//             refill(FULL);
-//             lock.lock();
-//         }
-//
-//         // Assumes necessary data is present
-//
-//         auto start_in_buffer = (offset - cur_start) + head;
-//         start_in_buffer %= size;
-//
-//         auto end_in_buffer = start_in_buffer + buf_size;
-//         end_in_buffer %= size;
-//
-//         if (end_in_buffer > start_in_buffer) memcpy(buf, base + start_in_buffer, buf_size);
-//         else {
-//             auto part1 = size - start_in_buffer;
-//             auto part2 = buf_size - part1;
-//
-//             memcpy(buf, base + start_in_buffer, part1);
-//             memcpy(buf + part1, base, part2);
-//         }
-//
-// #ifdef DEBUG
-//         print_stats();
-//         // print_buf(size, base);
-// #endif
-//     }
-//
-//     advance(buf_size);
-//
-//     {
-//         READ_LOCK;
-//
-// #ifdef DEBUG
-//         print_stats();
-//         printf("size_present <= size / 2 = %d\n", size_present <= (int)size / 2);
-// #endif
-//
-//         if (size_present <= size / 2) {
-//             // For now only 1 filler thread can be run at the same time
-//             lock.unlock();
-//             join_filler();
-//             lock.lock();
-//             filler = thread(&CyclicFragmentBuffer::refill, this, PARTIAL);
-//         }
-//
-// #ifdef DEBUG
-//         printf("-------------------------------\n");
-// #endif
-//     }
-//
-//     return buf_size;
-// }
+#include <atomic>
+#include <cassert>
+#include <cstring>
+#include <thread>
+#include <cstdio>
+#include <algorithm>
+#include "buffer/cfb.hpp"
+
+using namespace std;
+
+#define ACQUIRE(var) var.load(memory_order_acquire)
+#define RELAXED_L(var) var.load(memory_order_relaxed)
+#define RELEASE(var, val) var.store(val, memory_order_release)
+
+CyclicFragmentBuffer::CyclicFragmentBuffer(
+    DataFetcher *fetcher, size_t size, size_t min_loading_tresh
+)
+    : fetcher{fetcher}, size{size}, min_loading_tresh{min_loading_tresh} {
+    assert(min_loading_tresh < size);
+    total_size = fetcher->getTotalSizeLocal();
+    base = new uint8_t[size];
+    producer_thread = thread{&CyclicFragmentBuffer::producer, this};
+}
+CyclicFragmentBuffer::~CyclicFragmentBuffer() {
+    RELEASE(produce, false);
+    wake_up_producer();
+    if (producer_thread.joinable()) producer_thread.join();
+    printf("Producer thread finito\n");
+    delete[] base;
+}
+
+void CyclicFragmentBuffer::wake_up(atomic_uint &counter) {
+    counter.fetch_add(1, memory_order_acq_rel);
+    counter.notify_one();
+}
+void CyclicFragmentBuffer::wake_up_producer() { wake_up(consumer_counter); }
+void CyclicFragmentBuffer::wake_up_consumer() { wake_up(producer_counter); }
+
+void CyclicFragmentBuffer::set_offset(int offset) {
+    RELEASE(this->offset, offset);
+    wake_up_producer();
+}
+
+void CyclicFragmentBuffer::producer() {
+    int_type fill_size;
+    int_type present_size;
+    int_type filling_start;
+    int_type consumer_counter;
+
+    int_type offset;
+    int_type head;
+    int_type tail;
+    int_type bytes_left;
+    int_type present_valid_size;
+    int_type min_loading_tresh;
+    auto release_head_tail = [&] {
+        RELEASE(this->head, head);
+        RELEASE(this->tail, tail);
+    };
+
+    bool ahead;
+    bool behind;
+
+    while (produce.load(memory_order_acquire)) {
+        consumer_counter = ACQUIRE(this->consumer_counter);
+        offset = ACQUIRE(this->offset);
+        head = RELAXED_L(this->head);
+        tail = RELAXED_L(this->tail);
+
+        // Check if we have out of order offset and load if needed
+        ahead = offset < head;
+        behind = tail < offset;
+
+        // Set buffer to be empty (will be filled below)
+        if (ahead || behind) {
+            head = offset;
+            tail = head;
+
+            release_head_tail();
+        }
+
+        // Fill buffer if valid size present is below min tresh
+        present_valid_size = max(tail - offset, (int_type)0);
+        bytes_left = (int_type)total_size - tail;
+        min_loading_tresh = min((int_type)this->min_loading_tresh, bytes_left);
+
+        if (present_valid_size < min_loading_tresh) {
+            fill_size = min((int_type)size - present_valid_size, bytes_left);
+
+            filling_start = tail % size;
+
+#ifdef DEBUG
+            printf(
+                "{\n"
+                "\tpresent_valid_size = %ld\n"
+                "\tmin_loading_tresh = %ld\n"
+                "\tpresent_valid_size < min_loading_tresh = %d\n"
+                "\toffset = %ld\n"
+                "\thead = %ld\n"
+                "\ttail = %ld\n"
+                "\ttotal_size = %lu\n"
+                "\tbytes_left = %ld\n"
+                "\tfill_size = %ld\n"
+                "}\n",
+                present_valid_size,
+                min_loading_tresh,
+                present_valid_size < min_loading_tresh,
+                offset,
+                head,
+                tail,
+                total_size.load(),
+                bytes_left,
+                min((int_type)size - present_valid_size, bytes_left)
+            );
+#endif
+
+            if (filling_start + fill_size <= size) {
+                fetcher->fetchFramesLocal(tail, base + filling_start, fill_size);
+            } else {
+                auto part1 = size - filling_start;
+                fetcher->fetchFramesLocal(tail, base + filling_start, part1);
+                fetcher->fetchFramesLocal(tail + part1, base, fill_size - part1);
+            }
+
+            tail += fill_size;
+            if (tail - head > (int_type)size) head = tail - (int_type)size;
+
+            release_head_tail();
+        }
+
+        wake_up_consumer();
+        this->consumer_counter.wait(consumer_counter, memory_order_relaxed);
+    };
+}
+
+int CyclicFragmentBuffer::read(uint8_t *buf, int buf_size) {
+    int offset = ACQUIRE(this->offset);
+
+    buf_size = min((int_type)buf_size, (int_type)total_size - offset);
+    assert(buf_size <= size);
+    if (buf_size <= 0) return 0;
+
+    int head, tail;
+    bool behind, not_enough;
+    auto should_wait_for_producer = [&] {
+        head = ACQUIRE(this->head);
+        tail = ACQUIRE(this->tail);
+
+        behind = offset < head;
+        not_enough = offset + buf_size > tail;
+
+        return behind || not_enough;
+    };
+
+    while (should_wait_for_producer()) {
+        auto producer_counter = ACQUIRE(this->producer_counter);
+        wake_up_producer();
+        this->producer_counter.wait(producer_counter, memory_order_relaxed);
+
+        // This is where spinner appears
+        // return 0;
+    }
+
+    int reading_start = offset % size;
+    int reading_end = (offset + buf_size) % size;
+
+    if (reading_start < reading_end) memcpy(buf, base + reading_start, buf_size);
+    else {
+        auto part1 = size - reading_start;
+        auto part2 = buf_size - part1;
+
+        memcpy(buf, base + reading_start, part1);
+        memcpy(buf + part1, base, part2);
+    }
+
+    this->offset.fetch_add(buf_size, memory_order_acq_rel);
+
+    // We potentially need to refill after read
+    wake_up_producer();
+
+    return buf_size;
+}

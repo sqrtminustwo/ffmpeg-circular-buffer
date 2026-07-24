@@ -1,54 +1,40 @@
-#ifndef CYCLIC_FRAGMENT_BUFFER_H
-#define CYCLIC_FRAGMENT_BUFFER_H
+#ifndef PRODUCER_H
+#define PRODUCER_H
 
-#include "buffer.hpp"
+#include "buffer/buffer.hpp"
 #include "fetcher/data_fetcher.hpp"
-#include <shared_mutex>
+#include <atomic>
 #include <thread>
 
-enum RefillType { PARTIAL, FULL };
-
-class MutexProtectedAccess : public std::exception {
-  public:
-    const char *what() const noexcept;
-};
-
 class CyclicFragmentBuffer : public Buffer {
-    std::shared_mutex mutex;
-    int head = 0;        // Position of start of valid buffer (locally)
-    int size_present{0}; // Currently amount of usable data present in buffer
-    int cur_start = 0;   // Local head -> global position in file
-    size_t size;         // Size of buffer
-
-    std::thread filler;
+    std::atomic<int_type> head = 0; // Start of buffer in file
+    std::atomic<int_type> tail = 0; // End of buffer in file
+    const size_t size;              // Size of buffer, head and tail should be % this
+    const size_t min_loading_tresh; // If buffer size is <= this amount, fetching will be executed
 
     DataFetcher *fetcher;
 
-    // Producer thread
-    void operator()();
+    /*
+     *  Incremented if data has been read from buffer (offset changed)
+     *  Or produce was turned off
+     */
+    void wake_up(std::atomic_uint &);
+    void wake_up_producer();
+    void wake_up_consumer();
+    std::atomic_uint consumer_counter = 0;
+    std::atomic_uint producer_counter = 0;
+    std::atomic_bool produce = true;
+    std::thread producer_thread;
 
     int read(uint8_t *buf, int buf_size) override;
 
-    int non_valid_amount_present();
-    void refill(RefillType);
-    void advance(int);
-    void join_filler();
-
   public:
-#ifndef TEST
-    void set_base(uint8_t *) override;
-    uint8_t *get_base() const override;
-#endif
-
-    int get_size_present() const;
-    int get_head() const;
-
-    CyclicFragmentBuffer(DataFetcher *, size_t size);
+    CyclicFragmentBuffer() = delete;
+    CyclicFragmentBuffer(DataFetcher *, size_t size, size_t min_loading_tresh);
     ~CyclicFragmentBuffer() override;
 
-#ifdef DEBUG
-    void print_stats();
-#endif
+    void set_offset(int) override;
+    void producer();
 };
 
 #endif
